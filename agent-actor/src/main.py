@@ -10,10 +10,11 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Type
 
 from apify import Actor
 from crewai import Agent, Crew, Task
+from dotenv import load_dotenv
 from pydantic import ValidationError
 
 from .models import (
@@ -28,10 +29,15 @@ from .tools import (
     LinkedInScraperTool,
     TikTokScraperTool,
     TwitterScraperTool,
+    BasePlatformTool,
 )
 
 
-TOOL_BUILDERS: Dict[PlatformName, type] = {
+load_dotenv('.env.local')
+load_dotenv()
+
+
+TOOL_BUILDERS: Dict[PlatformName, Type[BasePlatformTool]] = {
     PlatformName.INSTAGRAM: InstagramScraperTool,
     PlatformName.FACEBOOK: FacebookScraperTool,
     PlatformName.TIKTOK: TikTokScraperTool,
@@ -67,7 +73,7 @@ async def main() -> None:
         platform_configs: List[PlatformTargetConfig] = []
         for raw_platform in raw_platforms:
             try:
-                platform_configs.append(PlatformTargetConfig.parse_obj(raw_platform))
+                platform_configs.append(PlatformTargetConfig.model_validate(raw_platform))
             except ValidationError as exc:
                 raise ValueError(f'Invalid platform configuration: {exc}') from exc
 
@@ -165,7 +171,7 @@ async def main() -> None:
         parsed_leads: List[SocialLead] = []
         for lead in leads_raw:
             try:
-                parsed_leads.append(SocialLead.parse_obj(lead))
+                parsed_leads.append(SocialLead.model_validate(lead))
             except ValidationError as exc:
                 Actor.log.warning('Skipping malformed lead payload: %s', exc)
 

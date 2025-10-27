@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
 class PlatformName(str, Enum):
@@ -22,6 +22,8 @@ class PlatformName(str, Enum):
 class PlatformTargetConfig(BaseModel):
     """Validated configuration for a single platform scrape request."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     platform: PlatformName
     targets: List[str]
     max_items: int = Field(25, alias="maxItems", ge=1, description="Maximum items fetched per target.")
@@ -36,9 +38,6 @@ class PlatformTargetConfig(BaseModel):
         description="Raw overrides merged into the Apify actor input.",
     )
 
-    class Config:
-        allow_population_by_field_name = True
-
 
 class ContactInfo(BaseModel):
     """Optional contact details extracted for a lead."""
@@ -51,6 +50,8 @@ class ContactInfo(BaseModel):
 class InstagramPost(BaseModel):
     """Subset of fields returned by the Instagram scraper."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     id: Optional[str] = None
     url: Optional[HttpUrl] = None
     caption: Optional[str] = None
@@ -60,12 +61,10 @@ class InstagramPost(BaseModel):
     owner_username: Optional[str] = Field(default=None, alias="ownerUsername")
     owner_full_name: Optional[str] = Field(default=None, alias="ownerFullName")
 
-    class Config:
-        allow_population_by_field_name = True
-
-
 class FacebookPost(BaseModel):
     """Subset of fields returned by the Facebook posts scraper."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     id: Optional[str] = None
     url: Optional[HttpUrl] = None
@@ -75,12 +74,10 @@ class FacebookPost(BaseModel):
     comments: Optional[int] = None
     shares: Optional[int] = None
 
-    class Config:
-        allow_population_by_field_name = True
-
-
 class TikTokVideo(BaseModel):
     """Subset of fields returned by the TikTok scraper."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     id: Optional[str] = None
     url: Optional[HttpUrl] = None
@@ -91,12 +88,10 @@ class TikTokVideo(BaseModel):
     shares: Optional[int] = Field(default=None, alias="shareCount")
     views: Optional[int] = Field(default=None, alias="playCount")
 
-    class Config:
-        allow_population_by_field_name = True
-
-
 class Tweet(BaseModel):
     """Subset of fields returned by the X/Twitter scraper."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     id: Optional[str] = None
     url: Optional[HttpUrl] = None
@@ -107,12 +102,10 @@ class Tweet(BaseModel):
     likes: Optional[int] = Field(default=None, alias="favoriteCount")
     quotes: Optional[int] = Field(default=None, alias="quoteCount")
 
-    class Config:
-        allow_population_by_field_name = True
-
-
 class LinkedInProfile(BaseModel):
     """Subset of fields returned by the LinkedIn profile scraper."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     profile_id: Optional[str] = Field(default=None, alias="profileId")
     full_name: Optional[str] = Field(default=None, alias="fullName")
@@ -123,12 +116,10 @@ class LinkedInProfile(BaseModel):
     about: Optional[str] = None
     contact: Optional[ContactInfo] = None
 
-    class Config:
-        allow_population_by_field_name = True
-
-
 class SocialLead(BaseModel):
     """Unified representation of a potential lead across platforms."""
+
+    model_config = ConfigDict(use_enum_values=True, populate_by_name=True)
 
     platform: PlatformName
     name: Optional[str] = None
@@ -140,20 +131,13 @@ class SocialLead(BaseModel):
     notes: Optional[str] = None
     source_id: Optional[str] = Field(default=None, alias="sourceId")
 
-    class Config:
-        use_enum_values = True
-        allow_population_by_field_name = True
-
-
 class LeadGenerationResult(BaseModel):
     """Structured data pushed into the Apify dataset."""
+
+    model_config = ConfigDict(use_enum_values=True, populate_by_name=True)
 
     query: str
     platforms: List[PlatformName]
     lead_summary: str = Field(alias="leadSummary")
     leads: List[SocialLead] = Field(default_factory=list)
     raw_agent_response: str = Field(alias="rawAgentResponse")
-
-    class Config:
-        use_enum_values = True
-        allow_population_by_field_name = True

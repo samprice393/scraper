@@ -1,6 +1,7 @@
 .mise.toml
 .nvim.lua
 storage
+.env.local
 
 # The rest is copied from https://github.com/github/gitignore/blob/main/Python.gitignore
 

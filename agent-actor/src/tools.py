@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+import os
+from typing import Any, ClassVar, Dict, List, Optional, Type
 
-from crewai_tools import ApifyActorsTool
-from pydantic import BaseModel, Field
+from apify_client import ApifyClient
+from crewai.tools.base_tool import BaseTool, EnvVar
+from pydantic import BaseModel, ConfigDict, Field
 
 from .models import PlatformName
 
@@ -23,8 +25,10 @@ def _merge_inputs(base: Dict[str, Any], overrides: Optional[Dict[str, Any]]) -> 
     return merged
 
 
-class _PlatformToolInput(BaseModel):
+class PlatformToolInput(BaseModel):
     """Base schema shared by the platform tools."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     targets: List[str] = Field(..., min_items=1, description="Profile URLs, handles, or search terms.")
     max_items: int = Field(25, alias="maxItems", ge=1, le=500, description="Maximum number of results per target.")
@@ -39,23 +43,39 @@ class _PlatformToolInput(BaseModel):
         description="Optional raw overrides merged into the Apify actor input.",
     )
 
-    class Config:
-        allow_population_by_field_name = True
 
-
-class _BasePlatformTool(ApifyActorsTool):
+class BasePlatformTool(BaseTool):
     """Adds friendlier arguments on top of the generic Apify actors tool."""
 
-    ArgsSchema = _PlatformToolInput
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def __init__(self, actor_name: str, platform: PlatformName, friendly_name: str, description: str) -> None:
-        self.platform = platform
-        super().__init__(actor_name)
-        self.name = friendly_name
-        self.description = description
+    actor_id: ClassVar[str]
+    platform: ClassVar[PlatformName]
+    tool_name: ClassVar[str]
+    tool_description: ClassVar[str]
+    ArgsSchema: ClassVar[Type[PlatformToolInput]] = PlatformToolInput
 
-        # Override the auto-generated schema with an ergonomic one.
-        self.args_schema = self.ArgsSchema
+    _client: ApifyClient
+
+    def __init__(self) -> None:
+        api_token = os.getenv('APIFY_API_TOKEN') or os.getenv('APIFY_TOKEN')
+        if not api_token:
+            raise ValueError('APIFY_API_TOKEN environment variable must be set for Apify access.')
+
+        client = ApifyClient(token=api_token)
+        super().__init__(
+            name=self.tool_name,
+            description=self.tool_description,
+            args_schema=self.ArgsSchema,
+            env_vars=[
+                EnvVar(
+                    name='APIFY_API_TOKEN',
+                    description='API token for Apify platform access',
+                    required=True,
+                )
+            ],
+        )
+        object.__setattr__(self, '_client', client)
 
     def _build_run_input(
         self,
@@ -65,6 +85,37 @@ class _BasePlatformTool(ApifyActorsTool):
         overrides: Optional[Dict[str, Any]],
     ) -> Dict[str, Any]:
         raise NotImplementedError
+
+    def _call_actor(self, run_input: Dict[str, Any]) -> List[Dict[str, Any]]:
+        try:
+            run = self._client.actor(self.actor_id).call(run_input=run_input)
+        except Exception as exc:  # noqa: BLE001
+            msg = f'Failed to call Apify actor {self.actor_id}: {exc}'
+            raise RuntimeError(msg) from exc
+
+        if not run:
+            return []
+
+        dataset_id = (
+            run.get('defaultDatasetId')
+            or run.get('default_dataset_id')
+            or run.get('datasetId')
+            or run.get('outputDatasetId')
+        )
+
+        if dataset_id:
+            items = self._client.dataset(dataset_id).list_items(clean=True).items
+            return items or []
+
+        if (items := run.get('items')) is not None:
+            return items
+
+        output = run.get('output', {})
+        if isinstance(output, dict) and 'items' in output:
+            maybe_items = output.get('items') or []
+            return maybe_items
+
+        return []
 
     # pylint: disable=arguments-differ
     def _run(  # type: ignore[override]
@@ -80,22 +131,19 @@ class _BasePlatformTool(ApifyActorsTool):
             include_contact_info=includeContactInfo,
             overrides=inputOverrides,
         )
-        return super()._run(run_input)
+        return self._call_actor(run_input)
 
 
-class InstagramScraperTool(_BasePlatformTool):
+class InstagramScraperTool(BasePlatformTool):
     """Tool wrapper around apify/instagram-scraper."""
 
-    def __init__(self) -> None:
-        super().__init__(
-            actor_name="apify/instagram-scraper",
-            platform=PlatformName.INSTAGRAM,
-            friendly_name="instagram_lead_scraper",
-            description=(
-                "Scrape Instagram profiles, hashtags, or search results to identify potential leads. "
-                "Targets can be profile URLs, @handles, #hashtags, or search keywords."
-            ),
-        )
+    actor_id: ClassVar[str] = 'apify/instagram-scraper'
+    platform: ClassVar[PlatformName] = PlatformName.INSTAGRAM
+    tool_name: ClassVar[str] = 'instagram_lead_scraper'
+    tool_description: ClassVar[str] = (
+        'Scrape Instagram profiles, hashtags, or search results to identify potential leads. '
+        'Targets can be profile URLs, @handles, #hashtags, or search keywords.'
+    )
 
     def _build_run_input(
         self,
@@ -134,19 +182,16 @@ class InstagramScraperTool(_BasePlatformTool):
         return _merge_inputs(base_input, overrides)
 
 
-class FacebookScraperTool(_BasePlatformTool):
+class FacebookScraperTool(BasePlatformTool):
     """Tool wrapper around apify/facebook-posts-scraper."""
 
-    def __init__(self) -> None:
-        super().__init__(
-            actor_name="apify/facebook-posts-scraper",
-            platform=PlatformName.FACEBOOK,
-            friendly_name="facebook_lead_scraper",
-            description=(
-                "Scrape Facebook pages and posts for engagement insights. "
-                "Targets should be Facebook page URLs or search keywords."
-            ),
-        )
+    actor_id: ClassVar[str] = 'apify/facebook-posts-scraper'
+    platform: ClassVar[PlatformName] = PlatformName.FACEBOOK
+    tool_name: ClassVar[str] = 'facebook_lead_scraper'
+    tool_description: ClassVar[str] = (
+        'Scrape Facebook pages and posts for engagement insights. '
+        'Targets should be Facebook page URLs or search keywords.'
+    )
 
     def _build_run_input(
         self,
@@ -169,19 +214,16 @@ class FacebookScraperTool(_BasePlatformTool):
         return _merge_inputs(base_input, overrides)
 
 
-class TikTokScraperTool(_BasePlatformTool):
+class TikTokScraperTool(BasePlatformTool):
     """Tool wrapper around clockworks/tiktok-scraper."""
 
-    def __init__(self) -> None:
-        super().__init__(
-            actor_name="clockworks/tiktok-scraper",
-            platform=PlatformName.TIKTOK,
-            friendly_name="tiktok_lead_scraper",
-            description=(
-                "Scrape TikTok profiles, hashtags, or search results. "
-                "Targets can be profile URLs, @handles, #hashtags, or keywords."
-            ),
-        )
+    actor_id: ClassVar[str] = 'clockworks/tiktok-scraper'
+    platform: ClassVar[PlatformName] = PlatformName.TIKTOK
+    tool_name: ClassVar[str] = 'tiktok_lead_scraper'
+    tool_description: ClassVar[str] = (
+        'Scrape TikTok profiles, hashtags, or search results. '
+        'Targets can be profile URLs, @handles, #hashtags, or keywords.'
+    )
 
     def _build_run_input(
         self,
@@ -220,19 +262,16 @@ class TikTokScraperTool(_BasePlatformTool):
         return _merge_inputs(base_input, overrides)
 
 
-class TwitterScraperTool(_BasePlatformTool):
+class TwitterScraperTool(BasePlatformTool):
     """Tool wrapper around apidojo/tweet-scraper."""
 
-    def __init__(self) -> None:
-        super().__init__(
-            actor_name="apidojo/tweet-scraper",
-            platform=PlatformName.TWITTER,
-            friendly_name="twitter_lead_scraper",
-            description=(
-                "Scrape X/Twitter timelines or search results. "
-                "Targets can be @handles for timelines or raw search queries."
-            ),
-        )
+    actor_id: ClassVar[str] = 'apidojo/tweet-scraper'
+    platform: ClassVar[PlatformName] = PlatformName.TWITTER
+    tool_name: ClassVar[str] = 'twitter_lead_scraper'
+    tool_description: ClassVar[str] = (
+        'Scrape X/Twitter timelines or search results. '
+        'Targets can be @handles for timelines or raw search queries.'
+    )
 
     def _build_run_input(
         self,
@@ -263,19 +302,16 @@ class TwitterScraperTool(_BasePlatformTool):
         return _merge_inputs(base_input, overrides)
 
 
-class LinkedInScraperTool(_BasePlatformTool):
+class LinkedInScraperTool(BasePlatformTool):
     """Tool wrapper around dev_fusion/linkedin-profile-scraper."""
 
-    def __init__(self) -> None:
-        super().__init__(
-            actor_name="dev_fusion/linkedin-profile-scraper",
-            platform=PlatformName.LINKEDIN,
-            friendly_name="linkedin_lead_scraper",
-            description=(
-                "Scrape LinkedIn profiles or company pages for lead details. "
-                "Targets should be LinkedIn profile or company URLs."
-            ),
-        )
+    actor_id: ClassVar[str] = 'dev_fusion/linkedin-profile-scraper'
+    platform: ClassVar[PlatformName] = PlatformName.LINKEDIN
+    tool_name: ClassVar[str] = 'linkedin_lead_scraper'
+    tool_description: ClassVar[str] = (
+        'Scrape LinkedIn profiles or company pages for lead details. '
+        'Targets should be LinkedIn profile or company URLs.'
+    )
 
     def _build_run_input(
         self,
@@ -295,6 +331,7 @@ class LinkedInScraperTool(_BasePlatformTool):
 
 
 __all__ = [
+    "BasePlatformTool",
     "InstagramScraperTool",
     "FacebookScraperTool",
     "TikTokScraperTool",
