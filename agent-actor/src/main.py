@@ -104,7 +104,17 @@ async def main() -> None:
             f"{query}\n\n"
             "Focus on generating high-quality leads from the following platform configs:\n"
             f"{platform_prompt}\n\n"
-            f"Aggregate up to {max_leads} unique leads across all platforms."
+            "IMPORTANT INSTRUCTIONS:\n"
+            "1. Use the provided tools to scrape data from each platform\n"
+            "2. For Instagram: The tool returns POSTS with owner information. Extract UNIQUE USERS from these posts.\n"
+            "   - Use 'ownerUsername' as the lead identifier\n"
+            "   - Use 'ownerFullName' as the name\n"
+            "   - Build profileUrl as 'https://www.instagram.com/{ownerUsername}'\n"
+            "   - Use post caption as recentActivity\n"
+            "   - Calculate engagementScore from likesCount and commentsCount\n"
+            "   - Add notes about why this user is a potential lead based on the query\n"
+            "3. Deduplicate leads by username/profile URL\n"
+            f"4. Return up to {max_leads} unique leads with the highest engagement or relevance\n"
         )
         expected_output = (
             "Return VALID JSON only (no code block). Schema:\n"

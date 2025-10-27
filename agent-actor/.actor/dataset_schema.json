@@ -1,82 +1,124 @@
 {
-    "title": "Lead Generation Result",
-    "type": "object",
-    "properties": {
-        "query": {
-            "title": "Agent Brief",
-            "type": "string"
-        },
-        "platforms": {
-            "title": "Platforms Processed",
-            "type": "array",
-            "items": {
+    "actorSpecification": 1,
+    "fields": {
+        "title": "Lead Generation Result",
+        "type": "object",
+        "properties": {
+            "query": {
+                "title": "Agent Brief",
+                "type": "string"
+            },
+            "platforms": {
+                "title": "Platforms Processed",
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "leadSummary": {
+                "title": "Summary",
+                "type": "string",
+                "description": "Narrative overview produced by the agent."
+            },
+            "leads": {
+                "title": "Leads",
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "platform": {
+                            "title": "Platform",
+                            "type": "string"
+                        },
+                        "name": {
+                            "title": "Entity Name",
+                            "type": "string"
+                        },
+                        "profileUrl": {
+                            "title": "Profile URL",
+                            "type": "string"
+                        },
+                        "headline": {
+                            "title": "Headline / Bio",
+                            "type": "string"
+                        },
+                        "recentActivity": {
+                            "title": "Recent Activity",
+                            "type": "string"
+                        },
+                        "engagementScore": {
+                            "title": "Engagement Score",
+                            "type": "number"
+                        },
+                        "contact": {
+                            "title": "Contact Details",
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "title": "Email",
+                                    "type": "string"
+                                },
+                                "phone": {
+                                    "title": "Phone",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "notes": {
+                            "title": "Additional Notes",
+                            "type": "string"
+                        },
+                        "sourceId": {
+                            "title": "Source Identifier",
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "rawAgentResponse": {
+                "title": "Raw Agent Response",
                 "type": "string"
             }
         },
-        "leadSummary": {
-            "title": "Summary",
-            "type": "string",
-            "description": "Narrative overview produced by the agent."
-        },
-        "leads": {
-            "title": "Leads",
-            "type": "array",
-            "items": {
-                "type": "object",
+        "required": ["query", "leadSummary"]
+    },
+    "views": {
+        "overview": {
+            "title": "Lead Generation Results",
+            "transformation": {
+                "fields": [
+                    "query",
+                    "platforms",
+                    "leadSummary",
+                    "leads",
+                    "rawAgentResponse"
+                ]
+            },
+            "display": {
+                "component": "table",
                 "properties": {
-                    "platform": {
-                        "title": "Platform",
-                        "type": "string"
+                    "query": {
+                        "label": "Agent Brief",
+                        "format": "text"
                     },
-                    "name": {
-                        "title": "Entity Name",
-                        "type": "string"
+                    "platforms": {
+                        "label": "Platforms",
+                        "format": "array"
                     },
-                    "profileUrl": {
-                        "title": "Profile URL",
-                        "type": "string"
+                    "leadSummary": {
+                        "label": "Summary",
+                        "format": "text"
                     },
-                    "headline": {
-                        "title": "Headline / Bio",
-                        "type": "string"
+                    "leads": {
+                        "label": "Leads",
+                        "format": "array"
                     },
-                    "recentActivity": {
-                        "title": "Recent Activity",
-                        "type": "string"
-                    },
-                    "engagementScore": {
-                        "title": "Engagement Score",
-                        "type": "number"
-                    },
-                    "contact": {
-                        "title": "Contact Details",
-                        "type": "object",
-                        "properties": {
-                            "email": {
-                                "title": "Email",
-                                "type": "string"
-                            },
-                            "phone": {
-                                "title": "Phone",
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "notes": {
-                        "title": "Additional Notes",
-                        "type": "string"
-                    },
-                    "sourceId": {
-                        "title": "Source Identifier",
-                        "type": "string"
+                    "rawAgentResponse": {
+                        "label": "Raw Response",
+                        "format": "text"
                     }
                 }
             }
-        },
-        "rawAgentResponse": {
-            "title": "Raw Agent Response",
-            "type": "string"
         }
-    },
-    "required": ["query", "leadSummary"]
+    }
 }

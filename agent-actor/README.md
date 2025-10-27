@@ -10,9 +10,33 @@ For a detailed guide, visit the [How to build an AI agent](https://blog.apify.co
 
 An [agent](https://docs.crewai.com/concepts/agents) is created and given a set of tools to accomplish a task. The agent receives a query from the user and decides which tools to use and in what order to complete the task. In this template, the agent uses `ApifyActorsTool('apify/instagram-scraper')` from `crewai_tools` to run the [Instagram Scraper Actor](https://apify.com/apify/instagram-scraper) and analyze scraped posts. The agent produces textual output, which is saved to a dataset.
 
+## Environment Variables
+
+**Required:** Before running this Actor, you must configure the following environment variable:
+
+- **`OPENAI_API_KEY`**: Your OpenAI API key for accessing GPT models
+
+**How to set environment variables:**
+
+- **Local development**: Create a `.env.local` file (copy from `.env.example`) and add your API key
+- **Apify Platform**: Go to your Actor → **Settings** → **Environment variables** and add `OPENAI_API_KEY` with your key
+
+Without this environment variable, the Actor will fail with an authentication error.
+
 ## How to use
 
 Tools are provided via `crewai_tools` and configured in `src/main.py`. To change tools, edit the `tools` list in `src/main.py`. You can also update the agent prompts in `src/main.py`. For more information, refer to the [CrewAI agent documentation](https://docs.crewai.com/concepts/agents) and the [CrewAI tools documentation](https://docs.crewai.com/concepts/tools).
+
+### Residential proxy configuration
+
+The bundled tools now opt into Apify's residential proxy pool so each scrape enjoys higher IP diversity by default. Override the behaviour with environment variables if needed:
+
+- `APIFY_USE_PROXY` (default `true`) – disable only when you must reach targets without Apify proxy.
+- `APIFY_PROXY_GROUPS` (default `RESIDENTIAL`) – customise proxy groups, comma-separated.
+- `APIFY_PROXY_COUNTRY` / `APIFY_PROXY_COUNTRY_CODE` – pin traffic to a two-letter country code when regional targeting is required.
+- `APIFY_PROXY_SESSION_MODE` (default `rotate`) – set to `sticky` to keep a single IP per run; the default leaves sessions unset so the proxy rotates automatically.
+
+These values can be added to `.env.local` during development or configured on the Actor in Apify Console.
 
 #### Pay Per Event
 

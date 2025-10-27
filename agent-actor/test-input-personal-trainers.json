@@ -1,0 +1,25 @@
+{
+  "query": "Find personal trainers on Instagram who are actively posting fitness content and engaging with their audience. Focus on trainers who offer online coaching, have visible contact information, and demonstrate expertise in fitness training.",
+  "platforms": [
+    {
+      "platform": "instagram",
+      "targets": [
+        "#personaltrainer",
+        "#fitnesstrainer",
+        "#personaltraining",
+        "#onlinecoach",
+        "#fitnessprofessional",
+        "#certifiedpersonaltrainer",
+        "#fitcoach",
+        "#strengthcoach",
+        "personal trainer near me",
+        "certified fitness trainer"
+      ],
+      "maxItems": 50,
+      "includeContactInfo": true
+    }
+  ],
+  "maxLeads": 100,
+  "modelName": "gpt-4o-mini",
+  "debug": true
+}

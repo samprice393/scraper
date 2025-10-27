@@ -79,7 +79,7 @@
         "modelName": {
             "title": "OpenAI Model",
             "type": "string",
-            "description": "The OpenAI model to use for reasoning and synthesis.",
+            "description": "The OpenAI model to use for reasoning and synthesis. Requires OPENAI_API_KEY environment variable to be set.",
             "enum": ["gpt-4o", "gpt-4o-mini"],
             "default": "gpt-4o-mini",
             "prefill": "gpt-4o-mini"
