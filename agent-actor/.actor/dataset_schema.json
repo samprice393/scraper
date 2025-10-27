@@ -1,24 +1,82 @@
 {
-    "actorSpecification": 1,
-    "views": {
-        "overview": {
-            "title": "Overview",
-            "transformation": {
-                "fields": ["query", "response"]
-            },
-            "display": {
-                "component": "table",
+    "title": "Lead Generation Result",
+    "type": "object",
+    "properties": {
+        "query": {
+            "title": "Agent Brief",
+            "type": "string"
+        },
+        "platforms": {
+            "title": "Platforms Processed",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "leadSummary": {
+            "title": "Summary",
+            "type": "string",
+            "description": "Narrative overview produced by the agent."
+        },
+        "leads": {
+            "title": "Leads",
+            "type": "array",
+            "items": {
+                "type": "object",
                 "properties": {
-                    "query": {
-                        "label": "Query",
-                        "format": "text"
+                    "platform": {
+                        "title": "Platform",
+                        "type": "string"
                     },
-                    "response": {
-                        "label": "Response",
-                        "format": "text"
+                    "name": {
+                        "title": "Entity Name",
+                        "type": "string"
+                    },
+                    "profileUrl": {
+                        "title": "Profile URL",
+                        "type": "string"
+                    },
+                    "headline": {
+                        "title": "Headline / Bio",
+                        "type": "string"
+                    },
+                    "recentActivity": {
+                        "title": "Recent Activity",
+                        "type": "string"
+                    },
+                    "engagementScore": {
+                        "title": "Engagement Score",
+                        "type": "number"
+                    },
+                    "contact": {
+                        "title": "Contact Details",
+                        "type": "object",
+                        "properties": {
+                            "email": {
+                                "title": "Email",
+                                "type": "string"
+                            },
+                            "phone": {
+                                "title": "Phone",
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "notes": {
+                        "title": "Additional Notes",
+                        "type": "string"
+                    },
+                    "sourceId": {
+                        "title": "Source Identifier",
+                        "type": "string"
                     }
                 }
             }
+        },
+        "rawAgentResponse": {
+            "title": "Raw Agent Response",
+            "type": "string"
         }
-    }
+    },
+    "required": ["query", "leadSummary"]
 }

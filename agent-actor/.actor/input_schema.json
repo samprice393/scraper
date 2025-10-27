@@ -1,31 +1,96 @@
 {
-    "title": "CrewAI Agent Python",
+    "title": "Social Media Lead Generation Agent Input",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
         "query": {
-            "title": "Query",
+            "title": "Agent Brief",
             "type": "string",
-            "description": "Query for the agent.",
-            "editor": "textfield",
-            "prefill": "Analyze the last 5 posts from @openai and @googledeepmind and summarize AI trends.",
-            "default": "This is a fallback test query, do nothing and !!do not call any tools!!. If asked to generate structured response, create a dummy one without optional fields, and empty lists - keep it as minimal as possible."
+            "description": "High-level goal or instructions for the lead generation agent.",
+            "editor": "textarea",
+            "prefill": "Identify AI companies hiring for growth roles and summarize recent engagement drivers across their social channels."
+        },
+        "platforms": {
+            "title": "Target Platforms",
+            "type": "array",
+            "description": "List of social platforms to inspect with the specific profiles, hashtags, or keywords to use as scraper inputs.",
+            "editor": "json",
+            "prefill": [
+                {
+                    "platform": "instagram",
+                    "targets": ["@openai", "#genai"]
+                },
+                {
+                    "platform": "linkedin",
+                    "targets": ["https://www.linkedin.com/company/openai/"]
+                },
+                {
+                    "platform": "twitter",
+                    "targets": ["openai", "anthropic"]
+                }
+            ],
+            "items": {
+                "type": "object",
+                "properties": {
+                    "platform": {
+                        "title": "Platform",
+                        "type": "string",
+                        "enum": ["instagram", "facebook", "tiktok", "twitter", "linkedin"],
+                        "description": "Social network to scrape."
+                    },
+                    "targets": {
+                        "title": "Targets",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Profile URLs, handles, hashtags, or search terms to pass to the Apify actor. Each target will be processed sequentially.",
+                        "minItems": 1
+                    },
+                    "maxItems": {
+                        "title": "Max Items",
+                        "type": "integer",
+                        "description": "Maximum number of items to fetch per target for this platform.",
+                        "default": 25,
+                        "minimum": 1
+                    },
+                    "inputOverrides": {
+                        "title": "Actor Input Overrides",
+                        "type": "object",
+                        "description": "Raw overrides merged into the Apify actor input. Use this when you need full control over a specific actor option."
+                    },
+                    "includeContactInfo": {
+                        "title": "Include Contact Info",
+                        "type": "boolean",
+                        "description": "If supported by the underlying actor, attempt to fetch contact details for prospects.",
+                        "default": true
+                    }
+                },
+                "required": ["platform", "targets"]
+            }
+        },
+        "maxLeads": {
+            "title": "Lead Cap",
+            "type": "integer",
+            "description": "Maximum number of aggregated leads the agent should return across all platforms.",
+            "default": 100,
+            "minimum": 1
         },
         "modelName": {
-            "title": "OpenAI model",
+            "title": "OpenAI Model",
             "type": "string",
-            "description": "The OpenAI model to use. Currently supported models are gpt-4o and gpt-4o-mini",
+            "description": "The OpenAI model to use for reasoning and synthesis.",
             "enum": ["gpt-4o", "gpt-4o-mini"],
             "default": "gpt-4o-mini",
             "prefill": "gpt-4o-mini"
         },
         "debug": {
-            "title": "Debug",
+            "title": "Debug Mode",
             "type": "boolean",
-            "description": "If enabled, the Actor will run in debug mode and produce more output.",
+            "description": "Enable verbose logging and tool diagnostics.",
             "editor": "checkbox",
-            "default": true
+            "default": false
         }
     },
-    "required": ["query"]
+    "required": ["query", "platforms"]
 }
